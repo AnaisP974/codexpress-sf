@@ -19,24 +19,26 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 class NoteController extends AbstractController
 {
     #[Route('/', name: 'app_note_all', methods: ['GET'])]
-    public function all(NoteRepository $nr, Request $request, PaginatorInterface $paginator): Response
+    public function all(NoteRepository $nr, PaginatorInterface $paginator, Request $request): Response
     {
         $pagination = $paginator->paginate(
-            $nr->findBy(['is_public' => true], ['created_at' => 'DESC']), // Le tableau de données
-            $request->query->getInt('page', 1), // Page en cours
-            10 // Nb d'éléments par page
+            $nr->findBy(['is_public' => true], ['created_at' => 'DESC']),
+            $request->query->getInt('page', 1), /*page number*/
+            10 /*limit per page*/
         );
-    
-        return $this->render('note/all.html.twig', ['allNotes' => $pagination,]);
+        return $this->render('note/all.html.twig', [
+            'allNotes' => $pagination,
+        ]);
     }
 
     #[Route('/n/{slug}', name: 'app_note_show', methods: ['GET'])]
     public function show(string $slug, NoteRepository $nr): Response
     {
         $note = $nr->findOneBySlug($slug); // Objet Note
+        // TODO: Mettre en place le filtre pour les notes privées
         return $this->render('note/show.html.twig', [
             'note' => $note,
-            'creatorNotes' => $nr->findByCreator($note->getCreator()->getId()),
+            'creatorNotes' => $nr->findByCreator($note->getCreator()->getId())
         ]);
     }
 
@@ -70,7 +72,9 @@ class NoteController extends AbstractController
                 ->setTitle($form->get('title')->getData())
                 ->setSlug($slugger->slug($note->getTitle()))
                 ->setContent($form->get('content')->getData())
-                ->setPublic($form->get('is_public')->getData())
+                ->setPublic($form->get('is_public')->
+            getData())
+            ->setPremium($form->get('is_premium')->getData())
                 ->setCategory($form->get('category')->getData())
                 ->setCreator($form->get('creator')->getData())
             ;

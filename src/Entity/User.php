@@ -64,10 +64,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255)]
     private ?string $image = null;
 
+    /**
+     * @var Collection<int, Like>
+     */
+    #[ORM\OneToMany(targetEntity: Like::class, mappedBy: 'creator', orphanRemoval: true)]
+    private Collection $likes;
+
+    #[ORM\OneToOne(mappedBy: 'creator', cascade: ['persist', 'remove'])]
+    private ?Subscription $subscription = null;
+
     public function __construct()
     {
         $this->notes = new ArrayCollection();
         $this->image = 'default.png';
+        $this->likes = new ArrayCollection();
     }
 
     #[ORM\PrePersist]
@@ -275,6 +285,53 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setImage(string $image): static
     {
         $this->image = $image;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Like>
+     */
+    public function getLikes(): Collection
+    {
+        return $this->likes;
+    }
+
+    public function addLike(Like $like): static
+    {
+        if (!$this->likes->contains($like)) {
+            $this->likes->add($like);
+            $like->setCreator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLike(Like $like): static
+    {
+        if ($this->likes->removeElement($like)) {
+            // set the owning side to null (unless already changed)
+            if ($like->getCreator() === $this) {
+                $like->setCreator(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getSubscription(): ?Subscription
+    {
+        return $this->subscription;
+    }
+
+    public function setSubscription(Subscription $subscription): static
+    {
+        // set the owning side of the relation if necessary
+        if ($subscription->getCreator() !== $this) {
+            $subscription->setCreator($this);
+        }
+
+        $this->subscription = $subscription;
 
         return $this;
     }

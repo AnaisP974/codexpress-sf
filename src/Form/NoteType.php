@@ -44,6 +44,10 @@ class NoteType extends AbstractType
                 'mapped' => false,
                 'required' => false,
             ])
+            ->add('is_premium', CheckboxType::class, [
+                'mapped' => false,
+                'required' => false,
+            ])
             ->add('category', EntityType::class, [
                 'class' => Category::class,
                 'choice_label' => 'title',

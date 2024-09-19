@@ -27,12 +27,6 @@ class Note
     private ?string $content = null;
 
     #[ORM\Column]
-    private ?bool $is_public = null;
-
-    #[ORM\Column(type: Types::BIGINT)]
-    private ?string $views = null;
-
-    #[ORM\Column]
     private ?\DateTimeImmutable $created_at = null;
 
     #[ORM\Column]
@@ -52,12 +46,31 @@ class Note
     #[ORM\JoinColumn(nullable: false)]
     private ?User $creator = null;
 
+    /**
+     * @var Collection<int, View>
+     */
+    #[ORM\OneToMany(targetEntity: View::class, mappedBy: 'note', orphanRemoval: true)]
+    private Collection $views;
+
+    /**
+     * @var Collection<int, Like>
+     */
+    #[ORM\OneToMany(targetEntity: Like::class, mappedBy: 'note', orphanRemoval: true)]
+    private Collection $likes;
+
+    #[ORM\Column]
+    private ?bool $is_public = null;
+
+    #[ORM\Column]
+    private ?bool $is_premium = null;
+
     public function __construct()
     {
         $this->notifications = new ArrayCollection(); // initialisation du tableau de notifications
-        $this->is_public = false; // initialisation du booléen à false
+        $this->is_public = false;
+        $this->is_premium = false;
         $this->title = uniqid('note-'); // initialisation du titre au GUID
-        $this->views = 0; // initialisation du compteur de vues
+        $this->likes = new ArrayCollection();
     }
 
     #[ORM\PrePersist]
@@ -114,29 +127,6 @@ class Note
         return $this;
     }
 
-    public function isPublic(): ?bool
-    {
-        return $this->is_public;
-    }
-
-    public function setPublic(bool $is_public): static
-    {
-        $this->is_public = $is_public;
-
-        return $this;
-    }
-
-    public function getViews(): ?string
-    {
-        return $this->views;
-    }
-
-    public function setViews(string $views): static
-    {
-        $this->views = $views;
-
-        return $this;
-    }
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {
@@ -215,4 +205,91 @@ class Note
 
         return $this;
     }
+
+    /**
+     * @return Collection<int, View>
+     */
+    public function getViews(): Collection
+    {
+        return $this->views;
+    }
+
+    public function addView(View $view): static
+    {
+        if (!$this->views->contains($view)) {
+            $this->views->add($view);
+            $view->setNote($this);
+        }
+
+        return $this;
+    }
+
+    public function removeView(View $view): static
+    {
+        if ($this->views->removeElement($view)) {
+            // set the owning side to null (unless already changed)
+            if ($view->getNote() === $this) {
+                $view->setNote(null);
+            }
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @return Collection<int, Like>
+     */
+    public function getLikes(): Collection
+    {
+        return $this->likes;
+    }
+
+    public function addLike(Like $like): static
+    {
+        if (!$this->likes->contains($like)) {
+            $this->likes->add($like);
+            $like->setNote($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLike(Like $like): static
+    {
+        if ($this->likes->removeElement($like)) {
+            // set the owning side to null (unless already changed)
+            if ($like->getNote() === $this) {
+                $like->setNote(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isPublic(): ?bool
+    {
+        return $this->is_public;
+    }
+
+    public function setPublic(bool $is_public): static
+    {
+        $this->is_public = $is_public;
+
+        return $this;
+    }
+
+    public function isPremium(): ?bool
+    {
+        return $this->is_premium;
+    }
+
+    public function setPremium(bool $is_premium): static
+    {
+        $this->is_premium = $is_premium;
+
+        return $this;
+    }
+
+
 }
